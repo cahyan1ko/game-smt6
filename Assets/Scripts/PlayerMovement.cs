@@ -15,10 +15,12 @@ public class PlayerMovement : MonoBehaviour
     private SpriteRenderer sprite;
     private PlayerController playerController;
 
+    private float mobileInputX = 0f;
+
     private Vector2 moveInput;
     private bool isJumping = false;
 
-    private enum MovementState { idle = 0, walk = 1, attack = 2, take_hit = 3 }
+    private enum MovementState { idle = 0, walk = 1, take_hit = 3 }
 
     [Header("Jump Settings")]
     [SerializeField] private LayerMask jumpableGround;
@@ -41,9 +43,6 @@ public class PlayerMovement : MonoBehaviour
         // Binding untuk pergerakan
         playerController.Movement.Move.performed += ctx => moveInput = ctx.ReadValue<Vector2>();
         playerController.Movement.Move.canceled += ctx => moveInput = Vector2.zero;
-
-        // Binding untuk aksi Attack
-        playerController.Attack.Attack.performed += ctx => Attack(); // Binding untuk Attack
     }
 
     private void OnDisable()
@@ -51,42 +50,45 @@ public class PlayerMovement : MonoBehaviour
         playerController.Disable();
     }
 
-    private void Attack()
-    {
-        anim.SetInteger("state", (int)MovementState.attack);
-    }
-
     private void Update()
     {
         moveInput = playerController.Movement.Move.ReadValue<Vector2>();
 
-        // Menambahkan kondisi jika Attack dipicu
-        if (playerController.Attack.Attack.triggered)
-        {
-            anim.SetInteger("state", (int)MovementState.attack);
-        }
     }
 
     private void FixedUpdate()
     {
-        // Mengatur pergerakan karakter
-        Vector2 targetVelocity = new Vector2(moveInput.x * moveSpeed, rb.velocity.y);
+        // Gabungan dengan input mobile
+        Vector2 targetVelocity = new Vector2((moveInput.x + mobileInputX) * moveSpeed, rb.velocity.y);
         rb.velocity = targetVelocity;
+
         UpdateAnimation();
+
+        // Reset isJumping hanya saat grounded dan velocity Y mendekati 0
+        if (isGrounded() && Mathf.Abs(rb.velocity.y) < 0.01f)
+        {
+            isJumping = false;
+        }
     }
 
     private void UpdateAnimation()
     {
-        MovementState state = MovementState.idle;
+        MovementState state;
+        float horizontal = moveInput.x != 0 ? moveInput.x : mobileInputX;
 
-        if (playerController.Attack.Attack.triggered) // Jika aksi Attack dipicu
-        {
-            state = MovementState.attack;
-        }
-        else if (moveInput.x != 0f) // Jika bergerak
+        if (horizontal > 0f)
         {
             state = MovementState.walk;
-            sprite.flipX = moveInput.x < 0f; // Flip sprite jika bergerak ke kiri
+            sprite.flipX = false;
+        }
+        else if (horizontal < 0f)
+        {
+            state = MovementState.walk;
+            sprite.flipX = true;
+        }
+        else
+        {
+            state = MovementState.idle;
         }
 
         anim.SetInteger("state", (int)state);
@@ -103,5 +105,39 @@ public class PlayerMovement : MonoBehaviour
         {
             rb.velocity = new Vector2(rb.velocity.x, jumpForce);
         }
+    }
+
+    public void MoveRight(bool isPressed)
+    {
+        if (isPressed)
+            mobileInputX = 1f;
+        else if (mobileInputX == 1f)
+            mobileInputX = 0f;
+    }
+
+    public void MoveLeft(bool isPressed)
+    {
+        if (isPressed)
+            mobileInputX = -1f;
+        else if (mobileInputX == -1f)
+            mobileInputX = 0f;
+    }
+
+    public void MobileJump()
+    {
+        if (isGrounded())
+        {
+            Jump();
+        }
+    }
+
+    public void pause()
+    {
+        Time.timeScale = 0;
+    }
+
+    public void resume()
+    {
+        Time.timeScale = 1;
     }
 }

@@ -30,13 +30,22 @@ public class PlayerAttack : MonoBehaviour, PlayerController.IAttackActions
         }
     }
 
+    public void MobileAttack()
+    {
+        if (canAttack)
+        {
+            PerformAttack();
+        }
+    }
+
+
     private void PerformAttack()
     {
         Debug.Log("Attack triggered!");
 
         if (playerAnimator != null)
         {
-            playerAnimator.SetTrigger("Attack");
+            playerAnimator.SetBool("AttackBool", true); // ✅ Mengatur parameter bool menjadi true
         }
 
         canAttack = false;
@@ -45,16 +54,13 @@ public class PlayerAttack : MonoBehaviour, PlayerController.IAttackActions
 
     private IEnumerator AttackCooldown()
     {
-        // Tunggu selama cooldown, sesuaikan dengan durasi animasi Attack (0.5 detik atau sesuai kebutuhan)
         yield return new WaitForSeconds(attackCooldown);
 
-        // Pastikan transisi kembali ke animasi Idle/Walk setelah cooldown selesai
         if (playerAnimator != null)
         {
-            playerAnimator.ResetTrigger("Attack");  // Reset trigger Attack setelah cooldown selesai
+            playerAnimator.SetBool("AttackBool", false); // ✅ Reset menjadi false setelah cooldown
         }
 
-        // Mengatur flag untuk bisa menyerang lagi
         canAttack = true;
     }
 }
