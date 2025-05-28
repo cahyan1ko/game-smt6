@@ -33,7 +33,7 @@ public class PlayerMovement : MonoBehaviour
         sprite = GetComponent<SpriteRenderer>();
         coll = GetComponent<BoxCollider2D>();
 
-        playerController = new PlayerController(); // Inisialisasi PlayerInputActions
+        playerController = new PlayerController();
     }
 
     private void OnEnable()
